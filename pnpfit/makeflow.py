@@ -12,50 +12,6 @@ from NPFit.NPFit.actionable import annotate
 from NPFitProduction.NPFitProduction.utils import sorted_combos
 
 
-class MakeflowSpecification(object):
-
-    def __init__(self, config):
-        self.ins = []
-        self.outs = []
-        self.cmd = []
-        self.config = config
-
-    def add(self, inputs, outputs, cmd='run'):
-        if isinstance(inputs, basestring):
-            inputs = [inputs]
-        if isinstance(outputs, basestring):
-            outputs = [outputs]
-        if isinstance(cmd, list):
-            cmd = ' '.join([str(x) for x in cmd])
-        cmd = shlex.split(cmd)
-
-        inputs = [self.config] + inputs
-        inputs.sort()
-        ins = ' '.join(inputs)
-        if isinstance(outputs, dict):
-            # FIXME hack, check https://github.com/cooperative-computing-lab/cctools/issues/1680 to see if issue with
-            # remote file naming + shared-fs gets fixed
-            # outs = ' '.join(["{}->{}".format(v, k) for k, v in outputs.items()])
-            outs = ' '.join(outputs.values())
-            cmd += ['; mv {} {}'.format(k, v) for k, v in outputs.items()]
-        else:
-            outs = ' '.join(outputs)
-
-        if (outs not in self.outs) or (outs == ''):
-            self.ins.append(ins)
-            self.outs.append(outs)
-            self.cmd.append(cmd)
-
-    def dump(self, makefile):
-        frag = """\n{out}: {ins}\n\t{cmd}\n"""
-        for ins, outs, cmd in zip(self.ins, self.outs, self.cmd):
-            with open(makefile, 'a') as f:
-                s = frag.format(
-                    out=outs,
-                    ins=ins,
-                    cmd=' '.join([str(x) for x in cmd]))
-                f.write(s)
-
 
 def prepare_cards(args, config, cardify):
     for analysis, path in config['cards'].items():
