@@ -1,27 +1,16 @@
+import glob
 import os
+import shutil
+import re
 
 
-def prepare_cards(args, config, cardify):
+def prepare_cards(config):
+    def cardify(name):
+        return os.path.join(config['outdir'], '{}.txt'.format(name))
+
     for analysis, path in config['cards'].items():
-        if os.path.isdir(path):
-            subprocess.call('combineCards.py {} > {}'.format(os.path.join(path, '*.txt'), cardify(analysis)), shell=True)
-        elif os.path.isfile(path):
+        if os.path.isfile(path):
             shutil.copy(path, cardify(analysis))
-
-    with open(cardify('4l'), 'r') as f:
-        card = f.read()
-    with open(cardify('4l'), 'w') as f:
-        # TODO fix this
-        f.write(card[:card.find('nuisance parameters') + 19])
-        f.write('''
-----------------------------------------------------------------------------------------------------------------------------------
-shapes *      ch1  FAKE
-shapes *      ch2  FAKE''')
-        f.write(card[card.find('nuisance parameters') + 19:])
-
-    subprocess.call('combineCards.py {} {} > {}'.format(cardify('3l'), cardify('4l'), cardify('ttZ')), shell=True)
-    subprocess.call('cp {} {}'.format(cardify('2l'), cardify('ttW')), shell=True)
-    subprocess.call('combineCards.py {} {} > {}'.format(cardify('ttZ'), cardify('ttW'), cardify('ttV_np')), shell=True)
 
     with open(cardify('ttV_np'), 'r') as f:
         card = f.read()

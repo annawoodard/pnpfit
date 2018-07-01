@@ -1,46 +1,51 @@
-import NPFit.NPFit.plotting as plotting
-import NPFit.NPFit.tabulation as tabulation
-from NPFit.NPFit.parameters import conversion
+# import NPFit.NPFit.plotting as plotting
+# import NPFit.NPFit.tabulation as tabulation
+# from NPFit.NPFit.parameters import conversion
+import os
+
+import pnpfit
 
 scanpoints = 3000
+
+data = os.path.join(pnpfit.__path__[0], 'data')
+
 config = {
-        'indirs': [
-            'data/cross_sections/13-TeV/merged'
-        ],
-        'outdir': '~/www/ttV/1/',  # Output directory; iterate the version each time you make changes
-        'shared-fs': ['/afs', '/hadoop'],  # Declare filesystems the batch system can access-- files will not be copied (faster)
-        'coefficients': ['cuW', 'cuB', 'cH', 'tc3G', 'c3G', 'cHu', 'c2G', 'cuG'],
-        'plots': [
-            plotting.NewPhysicsScaling([('ttW', 'x', 'blue'), ('ttZ', '+', '#2fd164'), ('ttH', 'o', '#ff321a')]),
-            plotting.NLL(),
-            plotting.TwoProcessCrossSectionSM(
-                subdir='.',
-                signals=['ttW', 'ttZ'],
-                theory_errors={'ttW': (0.1173, 0.1316), 'ttZ': (0.1164, 0.10)},
-                numpoints=500, chunksize=250, contours=True),
-            plotting.TwoProcessCrossSectionSMAndNP(
-                subdir='.',
-                signals=['ttW', 'ttZ'],
-                theory_errors={'ttW': (0.1173, 0.1316), 'ttZ': (0.1164, 0.10)}),
-            plotting.FitQualityByDim(fit_dimensions=[[2], [8]], eval_dimensions=[2, 8]),
-            plotting.FitQualityByPoints(dimensions=[(2, 'o', 'orchid'), (8, 's', 'navy')], points=range(1, 85, 1)),
-            plotting.NewPhysicsScaling2D(subdir='scaling-2d-128d-fit', dimensions=[1, 2, 8], maxnll=70, points=scanpoints),
-            plotting.NewPhysicsScaling2D(subdir='scaling-2d-128d-fit-frozen', dimensions=[1, 2, 8], maxnll=70,
-                points=scanpoints, profile=False),
-            plotting.NLL2D(draw='mesh', maxnll=70, points=scanpoints),
-            ],
-        'tables': [
-            tabulation.CLIntervals(dimension=1),
-            tabulation.CLIntervals(dimension=2),
-            tabulation.CLIntervals(dimension=8),
-            tabulation.CLIntervals(dimension=8, freeze=True)
-        ],
+        'release': '/home/annawoodard/ttV/CMSSW_8_1_0',
+        'cross sections': os.path.join(data, 'cross_sections/13-TeV/merged/merged.npz'),
+        'outdir': os.path.abspath('results'),
+        'coefficients': ['cuB'],
+        # 'coefficients': ['cuW', 'cuB', 'cH', 'tc3G', 'c3G', 'cHu', 'c2G', 'cuG'],
+        # 'plots': [
+        #     plotting.NewPhysicsScaling([('ttW', 'x', 'blue'), ('ttZ', '+', '#2fd164'), ('ttH', 'o', '#ff321a')]),
+        #     plotting.NLL(),
+        #     plotting.TwoProcessCrossSectionSMAndNP(
+        #         subdir='.',
+        #         signals=['ttW', 'ttZ'],
+        #         theory_errors={'ttW': (0.1173, 0.1316), 'ttZ': (0.1164, 0.10)}),
+        #     plotting.TwoProcessCrossSectionSM(
+        #         subdir='.',
+        #         signals=['ttW', 'ttZ'],
+        #         theory_errors={'ttW': (0.1173, 0.1316), 'ttZ': (0.1164, 0.10)},
+        #         numpoints=500, chunksize=250, contours=True),
+        #     plotting.FitQualityByDim(fit_dimensions=[[2], [8]], eval_dimensions=[2, 8]),
+        #     plotting.FitQualityByPoints(dimensions=[(2, 'o', 'orchid'), (8, 's', 'navy')], points=range(1, 85, 1)),
+        #     plotting.NewPhysicsScaling2D(subdir='scaling-2d-128d-fit', dimensions=[1, 2, 8], maxnll=70, points=scanpoints),
+        #     plotting.NewPhysicsScaling2D(subdir='scaling-2d-128d-fit-frozen', dimensions=[1, 2, 8], maxnll=70,
+        #         points=scanpoints, profile=False),
+        #     plotting.NLL2D(draw='mesh', maxnll=70, points=scanpoints),
+        #     ],
+        # 'tables': [
+        #     tabulation.CLIntervals(dimension=1),
+        #     tabulation.CLIntervals(dimension=2),
+        #     tabulation.CLIntervals(dimension=8),
+        #     tabulation.CLIntervals(dimension=8, freeze=True)
+        # ],
         'np chunksize': 100,
         'asimov data': False,  # Calculate expected values with MC data only (Asimov dataset), false for real data.
         'cards': {
-            '2l': 'data/cards/TOP-17-005/2l',
-            '3l': 'data/cards/TOP-17-005/3l',
-            '4l': 'data/cards/TOP-17-005/4l.txt'
+            'ttW': os.path.join(data, 'cards/TOP-17-005/ttW.txt'),
+            'ttZ': os.path.join(data, 'cards/TOP-17-005/ttZ.txt'),
+            'ttV_np': os.path.join(data, 'cards/TOP-17-005/ttV_np.txt')
             },
         'luminosity': 36,
         'scale window': 10,  # maximum scaling of any scaled process at which to set the scan boundaries
@@ -103,5 +108,4 @@ config = {
                 }
             },
         'label': 'ttV_FTW',  # label to use for batch submission: no need to change this between runs
-'batch type': 'condor',  # batch type for makeflow, can be local, wq, condor, sge, torque, moab, slurm, chirp, amazon, dryrun
 }

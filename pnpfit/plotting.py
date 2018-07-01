@@ -11,7 +11,6 @@ import time
 
 import jinja2
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,18 +22,18 @@ from matplotlib.mlab import griddata
 from matplotlib.ticker import FormatStrFormatter, LogLocator, MultipleLocator
 from mpl_toolkits.axes_grid1 import ImageGrid
 from root_numpy import root2array
-import ROOT
+# import ROOT
 from scipy.stats import chi2
 
-from NPFit.NPFit import kde
-from NPFit.NPFit.makeflow import (fluctuate, max_likelihood_fit, multi_signal,
-                                  multidim_grid, multidim_np)
-from NPFit.NPFit.nll import fit_nll
-from NPFit.NPFit.parameters import conversion, label, nlo
-from NPFit.NPFit.scaling import load_fitted_scan
-from NPFitProduction.NPFitProduction.cross_sections import CrossSectionScan
-from NPFitProduction.NPFitProduction.utils import (cartesian_product,
-                                                   sorted_combos)
+# from NPFit.NPFit import kde
+# from NPFit.NPFit.makeflow import (fluctuate, max_likelihood_fit, multi_signal,
+#                                   multidim_grid, multidim_np)
+# from NPFit.NPFit.nll import fit_nll
+# from NPFit.NPFit.parameters import conversion, label, nlo
+# from NPFit.NPFit.scaling import load_fitted_scan
+# from NPFitProduction.NPFitProduction.cross_sections import CrossSectionScan
+# from NPFitProduction.NPFitProduction.utils import (cartesian_product,
+#                                                    sorted_combos)
 
 tweaks = {
     "lines.markeredgewidth": 0.0,
@@ -176,7 +175,7 @@ class Plot(object):
     def __init__(self, subdir):
         self.subdir = subdir
 
-    def specify(self):
+    def make_input_futures(self):
         """Make all inputs
 
         This method should add all of the commands producing input files which
@@ -222,362 +221,362 @@ def get_errs(scan, dimension, processes, config, clip=None):
     return percent_errs, avg_abs_percent_errs
 
 
-class FitQualityByPoints(Plot):
+# class FitQualityByPoints(Plot):
 
-    def __init__(self, dimensions=[1], processes=['ttZ', 'ttH', 'ttW'], points=None, subdir='fit'):
-        self.dimensions = dimensions
-        self.processes = processes
-        self.subdir = subdir
-        if points is None:
-            self.fitpoints = np.array(range(10, 1000, 100))
-        else:
-            self.fitpoints = np.array(points)
+#     def __init__(self, dimensions=[1], processes=['ttZ', 'ttH', 'ttW'], points=None, subdir='fit'):
+#         self.dimensions = dimensions
+#         self.processes = processes
+#         self.subdir = subdir
+#         if points is None:
+#             self.fitpoints = np.array(range(10, 1000, 100))
+#         else:
+#             self.fitpoints = np.array(points)
 
-    def specify(self, config, spec, index):
-        spec.add(['cross_sections.npz'], [], ['run', 'plot', '--index', str(index), config['fn']])
+#     def make_input_futures(self, config, spec, index):
+#         spec.add(['cross_sections.npz'], [], ['run', 'plot', '--index', str(index), config['fn']])
 
-    def write(self, config, plotter, args):
-        super(FitQualityByPoints, self).write(config)
+#     def write(self, config, plotter, args):
+#         super(FitQualityByPoints, self).write(config)
 
-        name = os.path.join(self.subdir, 'fit_quality_by_points')
-        y_label = r'$\frac{100}{n}\sum^n_{i=1} |\frac{\mu_{\mathrm{MG}} - \mu_{\mathrm{fit}}}{\mu_{\mathrm{MG}}}|_i$'
-        loc = MultipleLocator(5)
-        with plotter.saved_figure('fit points', y_label, name,
-                figsize=(17, 11)) as ax:
-            labels = []
-            table = []
-            scan = load_fitted_scan(config, 'cross_sections.npz')
-            testpoints = dict((dimension, 0) for dimension, _, _ in self.dimensions)
-            for dimension, _, _ in self.dimensions:
-                for k in scan.points.keys():
-                    if len(k) == dimension:
-                        testpoints[dimension] += sum([len(v) for v in scan.points[k].values()])
-            avg_abs_percent_errs = np.zeros(len(self.fitpoints))
+#         name = os.path.join(self.subdir, 'fit_quality_by_points')
+#         y_label = r'$\frac{100}{n}\sum^n_{i=1} |\frac{\mu_{\mathrm{MG}} - \mu_{\mathrm{fit}}}{\mu_{\mathrm{MG}}}|_i$'
+#         loc = MultipleLocator(5)
+#         with plotter.saved_figure('fit points', y_label, name,
+#                 figsize=(17, 11)) as ax:
+#             labels = []
+#             table = []
+#             scan = load_fitted_scan(config, 'cross_sections.npz')
+#             testpoints = dict((dimension, 0) for dimension, _, _ in self.dimensions)
+#             for dimension, _, _ in self.dimensions:
+#                 for k in scan.points.keys():
+#                     if len(k) == dimension:
+#                         testpoints[dimension] += sum([len(v) for v in scan.points[k].values()])
+#             avg_abs_percent_errs = np.zeros(len(self.fitpoints))
 
-            for dimension, marker, color in self.dimensions:
-                for index, points in enumerate(self.fitpoints):
-                    scan = load_fitted_scan(config, 'cross_sections.npz', maxpoints=points, dimension=dimension)
-                    errs, avg_abs_percent_err = get_errs(scan, dimension, self.processes, config,
-                            clip=min(testpoints.values()))
+#             for dimension, marker, color in self.dimensions:
+#                 for index, points in enumerate(self.fitpoints):
+#                     scan = load_fitted_scan(config, 'cross_sections.npz', maxpoints=points, dimension=dimension)
+#                     errs, avg_abs_percent_err = get_errs(scan, dimension, self.processes, config,
+#                             clip=min(testpoints.values()))
 
-                    table.append([points, avg_abs_percent_err, len(errs), dimension])
-                    avg_abs_percent_errs[index] = avg_abs_percent_err
+#                     table.append([points, avg_abs_percent_err, len(errs), dimension])
+#                     avg_abs_percent_errs[index] = avg_abs_percent_err
 
-                ax.plot(self.fitpoints, avg_abs_percent_errs, marker=marker, markersize=10, linewidth=1, linestyle='none',
-                        label='fit dimension {}'.format(dimension), color=color)
-            ax.set_yscale('log', subsy=range(10))
-            ax.xaxis.set_minor_locator(loc)
-            ax.tick_params(axis='x', length=5, which='minor')
-            plt.legend(fontsize='large')
+#                 ax.plot(self.fitpoints, avg_abs_percent_errs, marker=marker, markersize=10, linewidth=1, linestyle='none',
+#                         label='fit dimension {}'.format(dimension), color=color)
+#             ax.set_yscale('log', subsy=range(10))
+#             ax.xaxis.set_minor_locator(loc)
+#             ax.tick_params(axis='x', length=5, which='minor')
+#             plt.legend(fontsize='large')
 
-        headers = ['fit points', 'average absolute percent error', 'total test points', 'dimension']
-        with open(os.path.join(config['outdir'], 'fit_quality_by_points.txt'), 'w') as f:
-            f.write(tabulate.tabulate(table, headers=headers) + '\n')
+#         headers = ['fit points', 'average absolute percent error', 'total test points', 'dimension']
+#         with open(os.path.join(config['outdir'], 'fit_quality_by_points.txt'), 'w') as f:
+#             f.write(tabulate.tabulate(table, headers=headers) + '\n')
 
-class FitQualityByDim(Plot):
+# class FitQualityByDim(Plot):
 
-    def __init__(self, fit_dimensions=[1], eval_dimensions=None, processes=['ttZ', 'ttH', 'ttW'], fit_to_test_ratio=1,
-            subdir='fit', xmin=-100, xmax=50):
-        self.fit_dimensions = fit_dimensions
-        self.eval_dimensions = eval_dimensions
-        self.processes = processes
-        self.fit_to_test_ratio = float(fit_to_test_ratio)
-        self.subdir = subdir
-        self.xmin = xmin
-        self.xmax = xmax
+#     def __init__(self, fit_dimensions=[1], eval_dimensions=None, processes=['ttZ', 'ttH', 'ttW'], fit_to_test_ratio=1,
+#             subdir='fit', xmin=-100, xmax=50):
+#         self.fit_dimensions = fit_dimensions
+#         self.eval_dimensions = eval_dimensions
+#         self.processes = processes
+#         self.fit_to_test_ratio = float(fit_to_test_ratio)
+#         self.subdir = subdir
+#         self.xmin = xmin
+#         self.xmax = xmax
 
-    def specify(self, config, spec, index):
-        spec.add(['cross_sections.npz'], [], ['run', 'plot', '--index', str(index), config['fn']])
+#     def make_input_futures(self, config, spec, index):
+#         spec.add(['cross_sections.npz'], [], ['run', 'plot', '--index', str(index), config['fn']])
 
-    def write(self, config, plotter, args):
-        super(FitQualityByDim, self).write(config)
+#     def write(self, config, plotter, args):
+#         super(FitQualityByDim, self).write(config)
 
-        name = os.path.join(self.subdir, 'fit_quality_by_dim')
-        x_label = r'$100 \frac{\mu_{\mathrm{MG}} - \mu_{\mathrm{fit}}}{\mu_{\mathrm{MG}}}$'
-        scan = CrossSectionScan(os.path.join(config['outdir'], 'cross_sections.npz'))
+#         name = os.path.join(self.subdir, 'fit_quality_by_dim')
+#         x_label = r'$100 \frac{\mu_{\mathrm{MG}} - \mu_{\mathrm{fit}}}{\mu_{\mathrm{MG}}}$'
+#         scan = CrossSectionScan(os.path.join(config['outdir'], 'cross_sections.npz'))
 
-        testpoints = dict(('_'.join([str(d) for d in dimensions]), 0) for dimensions in self.fit_dimensions)
-        for dimensions in self.fit_dimensions:
-            tag = '_'.join([str(d) for d in dimensions])
-            for k in scan.points.keys():
-                if len(k) in dimensions:
-                    testpoints[tag] += sum([len(v) for v in scan.points[k].values()])
-        with plotter.saved_figure(x_label, 'counts', name) as ax:
-            labels = []
-            table = []
+#         testpoints = dict(('_'.join([str(d) for d in dimensions]), 0) for dimensions in self.fit_dimensions)
+#         for dimensions in self.fit_dimensions:
+#             tag = '_'.join([str(d) for d in dimensions])
+#             for k in scan.points.keys():
+#                 if len(k) in dimensions:
+#                     testpoints[tag] += sum([len(v) for v in scan.points[k].values()])
+#         with plotter.saved_figure(x_label, 'counts', name) as ax:
+#             labels = []
+#             table = []
 
-            for fit_dims in self.fit_dimensions:
-                scan.fit(dimensions=fit_dims)
-                for eval_dim in (self.eval_dimensions if self.eval_dimensions is not None else fit_dims):
-                    errs, _ = get_errs(scan, eval_dim, self.processes, config, clip=min(testpoints.values()))
-                    errs[errs < self.xmin] = self.xmin
-                    errs[errs > self.xmax] = self.xmax
-                    if self.eval_dimensions is None:
-                        label = '{fdim} fit $\sigma$={s:0.2f}'.format(
-                            fdim=' and '.join(('{}d'.format(dim) for dim in fit_dims)),
-                            s=np.std(errs),
-                        )
-                    else:
-                        label = '{fdim} fit, {edim}d evaluation $\sigma_{{{sfdim},{edim}}}$={s:0.2f}'.format(
-                            fdim=' and '.join(('{}d'.format(dim) for dim in fit_dims)),
-                            edim=eval_dim,
-                            sfdim='+'.join((str(dim) for dim in fit_dims)),
-                            s=np.std(errs),
-                        )
-                    ax.hist(errs, 70, histtype='step', fill=False, label=label, linewidth=4)
-                    bad = errs[(errs < -5) | (errs > 5)]
-                ax.set_yscale('log', subsy=range(10))
-                if self.eval_dimensions is not None:
-                    plt.ylim(ymin=0, ymax=2e7)
-                    plt.xlim(xmin=-100)
-                ax.yaxis.set_tick_params('minor', size=5)
-                plt.legend(title='{:,} test points'.format(len(errs)), loc='upper left')
-
-
-class NewPhysicsScaling2D(Plot):
-
-    def __init__(
-            self,
-            processes=['ttZ', 'ttH', 'ttW'],
-            subdir='scaling2d',
-            dimensionless=False,
-            dimensions=None,
-            maxnll=None,
-            match_zwindows=False,
-            madgraph=False,
-            numvalues=100,
-            points=10000,
-            dpi=500,
-            profile=True):
-        self.subdir = subdir
-        self.processes = processes
-        self.dimensionless = dimensionless
-        self.dimensions = dimensions if dimensions is not None else [2]
-        self.maxnll = maxnll
-        self.match_zwindows = match_zwindows
-        self.madgraph = madgraph
-        self.numvalues = numvalues
-        self.points = points
-        self.dpi = dpi
-        self.profile = profile
-
-    def specify(self, config, spec, index):
-        inputs = []
-        if self.maxnll is not None:
-            inputs += multidim_np(config, spec, 2, points=self.points)
-
-        for coefficients in sorted_combos(config['coefficients'], 2):
-            cmd = 'run plot --coefficients {coefficients} --index {index} {fn}'
-            base = os.path.join(config['outdir'], 'plots', self.subdir, '_'.join(coefficients))
-            outputs = [base + ext for ext in ['.pdf', '.png']]
-            spec.add(inputs + ['cross_sections.npz'], outputs, cmd.format(coefficients=' '.join(coefficients), index=index, fn=config['fn']))
-            if self.profile:
-                workspace = os.path.join(config['outdir'], 'workspaces', '{}.root'.format('_'.join(config['coefficients'])))
-                cmd = ['run', 'combine', '--snapshot'] + list(coefficients) + [config['fn']]
-                snapshot = os.path.join(config['outdir'], 'snapshots', '{}.root'.format('_'.join(coefficients)))
-                spec.add([workspace], [snapshot], cmd)
-
-    def write(self, config, plotter, args):
-        super(NewPhysicsScaling2D, self).write(config)
-        scan = CrossSectionScan(os.path.join(config['outdir'], 'cross_sections.npz'))
-        scan.fit(dimensions=self.dimensions)
-
-        if self.match_zwindows:
-            zmin = None
-            zmax = None
-            for coefficients in sorted_combos(args.coefficients, 2):
-                madgraph = scan.dataframe(coefficients)
-                if zmin is None:
-                    zmin = min(madgraph[self.processes].min())
-                    zmax = max(madgraph[self.processes].max())
-                else:
-                    zmin = min(min(madgraph[self.processes].min()), zmin)
-                    zmax = max(max(madgraph[self.processes].max()), zmax)
-
-        for coefficients in sorted_combos(args.coefficients, 2):
-            tag = '_'.join(coefficients)
-            name = os.path.join(self.subdir, tag)
-            x = coefficients[0]
-            y = coefficients[1]
-
-            x_label = label[x] + ('' if self.dimensionless else r' $/\Lambda^2\, / \,\mathrm{TeV}^{-2}$')
-            y_label = label[y] + ('' if self.dimensionless else r' $/\Lambda^2\, / \,\mathrm{TeV}^{-2}$')
-            x_conv = 1. if self.dimensionless else conversion[x]
-            y_conv = 1. if self.dimensionless else conversion[y]
-
-            if coefficients in scan.points.keys():
-                madgraph = scan.dataframe(coefficients)
-            else:
-                madgraph = scan.dataframe(sorted(config['coefficients']))
-            xmin = madgraph[x].min()
-            xmax = madgraph[x].max()
-            ymin = madgraph[y].min()
-            ymax = madgraph[y].max()
-
-            if self.maxnll:
-                try:
-                    data = root2array(os.path.join(config['outdir'], 'scans', '{}.total.root'.format(tag)))
-                except IOError as e:
-                    print 'input data missing, will not match nll for {}'.format(tag)
-                    continue
-
-                zi = 2 * data['deltaNLL']
-                xi = data[x]
-                yi = data[y]
-                xmin = xi[zi < self.maxnll].min()
-                ymin = yi[zi < self.maxnll].min()
-                xmax = xi[zi < self.maxnll].max()
-                ymax = yi[zi < self.maxnll].max()
-                window = (madgraph[x] > xmin) & (madgraph[x] < xmax) & (madgraph[y] > ymin) & (madgraph[y] < ymax)
-                madgraph = madgraph[window]
+#             for fit_dims in self.fit_dimensions:
+#                 scan.fit(dimensions=fit_dims)
+#                 for eval_dim in (self.eval_dimensions if self.eval_dimensions is not None else fit_dims):
+#                     errs, _ = get_errs(scan, eval_dim, self.processes, config, clip=min(testpoints.values()))
+#                     errs[errs < self.xmin] = self.xmin
+#                     errs[errs > self.xmax] = self.xmax
+#                     if self.eval_dimensions is None:
+#                         label = '{fdim} fit $\sigma$={s:0.2f}'.format(
+#                             fdim=' and '.join(('{}d'.format(dim) for dim in fit_dims)),
+#                             s=np.std(errs),
+#                         )
+#                     else:
+#                         label = '{fdim} fit, {edim}d evaluation $\sigma_{{{sfdim},{edim}}}$={s:0.2f}'.format(
+#                             fdim=' and '.join(('{}d'.format(dim) for dim in fit_dims)),
+#                             edim=eval_dim,
+#                             sfdim='+'.join((str(dim) for dim in fit_dims)),
+#                             s=np.std(errs),
+#                         )
+#                     ax.hist(errs, 70, histtype='step', fill=False, label=label, linewidth=4)
+#                     bad = errs[(errs < -5) | (errs > 5)]
+#                 ax.set_yscale('log', subsy=range(10))
+#                 if self.eval_dimensions is not None:
+#                     plt.ylim(ymin=0, ymax=2e7)
+#                     plt.xlim(xmin=-100)
+#                 ax.yaxis.set_tick_params('minor', size=5)
+#                 plt.legend(title='{:,} test points'.format(len(errs)), loc='upper left')
 
 
-            if not self.match_zwindows:
-                zmin = min(madgraph[self.processes].min())
-                zmax = max(madgraph[self.processes].max())
+# class NewPhysicsScaling2D(Plot):
 
-            norm = matplotlib.colors.LogNorm(vmin=min(zmin, 0.9), vmax=zmax)
-            masked_map = get_masked_colormap(
-                    sns.light_palette("navy", as_cmap=True),
-                    sns.light_palette((210, 90, 60), input="husl", as_cmap=True),
-                    norm,
-                    0.1,
-                    1.0
-            )
+#     def __init__(
+#             self,
+#             processes=['ttZ', 'ttH', 'ttW'],
+#             subdir='scaling2d',
+#             dimensionless=False,
+#             dimensions=None,
+#             maxnll=None,
+#             match_zwindows=False,
+#             madgraph=False,
+#             numvalues=100,
+#             points=10000,
+#             dpi=500,
+#             profile=True):
+#         self.subdir = subdir
+#         self.processes = processes
+#         self.dimensionless = dimensionless
+#         self.dimensions = dimensions if dimensions is not None else [2]
+#         self.maxnll = maxnll
+#         self.match_zwindows = match_zwindows
+#         self.madgraph = madgraph
+#         self.numvalues = numvalues
+#         self.points = points
+#         self.dpi = dpi
+#         self.profile = profile
 
-            fig = plt.figure(figsize=(30, 9))
-            grid = ImageGrid(
-                fig, 111,
-                nrows_ncols=(1, len(self.processes)),
-                axes_pad=0.45,
-                share_all=True,
-                cbar_location="right",
-                cbar_mode="single",
-                cbar_size="7%",
-                cbar_pad=0.15,
-                aspect=False
-            )
+#     def make_input_futures(self, config, spec, index):
+#         inputs = []
+#         if self.maxnll is not None:
+#             inputs += multidim_np(config, spec, 2, points=self.points)
 
-            offplane_coefficients = []
-            offplane_values = []
-            if self.madgraph:
-                df = madgraph
-                for c in sorted(config['coefficients']):
-                    if c not in coefficients:
-                        offplane_coefficients += [c]
-                        offplane_values += [0.0]
-            else:
-                if self.profile:
-                    f = ROOT.TFile(os.path.join(config['outdir'], 'snapshots',
-                        '{}.root'.format('_'.join(coefficients))))
-                    w = f.Get('w')
-                    w.loadSnapshot('MultiDimFit')
-                values = []
-                columns = sorted(config['coefficients'])
-                for column in columns:
-                    if column in coefficients:
-                        if column == x:
-                            values += [np.linspace(xmin, xmax, self.numvalues)]
-                        if column == y:
-                            values += [np.linspace(ymin, ymax, self.numvalues)]
-                    else:
-                        offplane_coefficients += [column]
-                        if self.profile:
-                            var = w.var(column)
-                            values += [np.array([var.getVal()])]
-                            offplane_values += [var.getVal() * (1. if self.dimensionless else conversion[column])]
-                        else:
-                            values += [np.zeros(1)]
-                            offplane_values += [0.]
-                start = time.time()
-                df = scan.dataframe(columns, evaluate_points=cartesian_product(*values))
-                print('took {:.1f} seconds to get df '.format(time.time() - start))
+#         for coefficients in sorted_combos(config['coefficients'], 2):
+#             cmd = 'run plot --coefficients {coefficients} --index {index} {fn}'
+#             base = os.path.join(config['outdir'], 'plots', self.subdir, '_'.join(coefficients))
+#             outputs = [base + ext for ext in ['.pdf', '.png']]
+#             spec.add(inputs + ['cross_sections.npz'], outputs, cmd.format(coefficients=' '.join(coefficients), index=index, fn=config['fn']))
+#             if self.profile:
+#                 workspace = os.path.join(config['outdir'], 'workspaces', '{}.root'.format('_'.join(config['coefficients'])))
+#                 cmd = ['run', 'combine', '--snapshot'] + list(coefficients) + [config['fn']]
+#                 snapshot = os.path.join(config['outdir'], 'snapshots', '{}.root'.format('_'.join(coefficients)))
+#                 spec.add([workspace], [snapshot], cmd)
 
-            for ax, process in zip(grid, self.processes):
-                columns = list(coefficients) + [process]
-                data = df[columns]
-                xx = data[x].values * x_conv
-                yy = data[y].values * y_conv
-                X, Y = np.meshgrid(np.linspace(xmin * x_conv, xmax * x_conv, self.numvalues * 10), np.linspace(ymin *
-                    y_conv, ymax * y_conv, self.numvalues * 10))
-                Z = scipy.interpolate.griddata((xx, yy), data[process].values, (X, Y), method='nearest')
-                msize = 200 if self.madgraph else 25
-                marker = 'o' if self.madgraph else 's'
-                start = time.time()
-                if self.madgraph:
-                    scatter = ax.scatter(
-                            xx,
-                            yy,
-                            c=data[process],
-                            norm=norm,
-                            s=msize,
-                            marker=marker,
-                            cmap=masked_map,
-                            edgecolors='face',
-                            rasterized=True
-                    )
-                else:
-                    scatter = ax.pcolormesh(
-                            X,
-                            Y,
-                            Z,
-                            rasterized=True,
-                            norm=norm,
-                            cmap=masked_map)
-                if not self.profile:
-                    ax.scatter(
-                            [0.0],
-                            [0.0],
-                            c='red',
-                            s=600,
-                            linewidths=0,
-                            marker='*',
-                            label='SM'
-                    )
-                ax.set_ylabel(y_label, horizontalalignment='right', y=1.0)
-                ax.set_xlim([xx.min(), xx.max()])
-                ax.set_ylim([yy.min(), yy.max()])
-                ax.annotate(
-                    label[process],
-                    xy=(0.5, 0.85),
-                    xycoords='axes fraction',
-                    horizontalalignment='center',
-                    fontsize='x-large',
-                    bbox=dict(boxstyle="round,pad=.5", fc="white", ec="none")
-                )
+#     def write(self, config, plotter, args):
+#         super(NewPhysicsScaling2D, self).write(config)
+#         scan = CrossSectionScan(os.path.join(config['outdir'], 'cross_sections.npz'))
+#         scan.fit(dimensions=self.dimensions)
 
-            bar = fig.colorbar(
-                    scatter,
-                    cax=ax.cax,
-                    label='$\sigma_{NP+SM} / \sigma_{SM}$',
-                    ticks=LogLocator(subs=range(10)),
-                )
-            # there is bug in this version of matplotlib ignores zorder, so redraw ticklines
-            for t in ax.cax.yaxis.get_ticklines():
-                ax.cax.add_artist(t)
+#         if self.match_zwindows:
+#             zmin = None
+#             zmax = None
+#             for coefficients in sorted_combos(args.coefficients, 2):
+#                 madgraph = scan.dataframe(coefficients)
+#                 if zmin is None:
+#                     zmin = min(madgraph[self.processes].min())
+#                     zmax = max(madgraph[self.processes].max())
+#                 else:
+#                     zmin = min(min(madgraph[self.processes].min()), zmin)
+#                     zmax = max(max(madgraph[self.processes].max()), zmax)
 
-            ax.legend(fancybox=True)
-            if self.dimensionless:
-                point = ', '.join([label[c] for c in offplane_coefficients])
-            else:
-                point = ', '.join(['$\\frac{{{}}}{{\Lambda^2}}$'.format(label[c].replace('$', '')) for c in offplane_coefficients])
-            title = fig.suptitle(
-                    '({}) = ({}){}'.format(
-                        point,
-                        ', '.join([round(v, 2) for v in offplane_values]),
-                        ' TeV$^{-2}$' if not self.dimensionless else ''),
-                    fontsize="x-large"
-            )
-            title.set_position([.5, 1.05])
+#         for coefficients in sorted_combos(args.coefficients, 2):
+#             tag = '_'.join(coefficients)
+#             name = os.path.join(self.subdir, tag)
+#             x = coefficients[0]
+#             y = coefficients[1]
 
-            logging.info('saving {}'.format(name))
-            ax.set_xlabel(x_label, horizontalalignment='right', x=1.0)
-            start = time.time()
-            plt.savefig(os.path.join(config['outdir'], 'plots', '{}.pdf'.format(name)), bbox_inches='tight', dpi=self.dpi)
-            plt.savefig(os.path.join(config['outdir'], 'plots', '{}.png'.format(name)), bbox_inches='tight',
-                    dpi=self.dpi)
-            plt.close()
-            print('took {:.1f} seconds to save plot '.format(time.time() - start))
+#             x_label = label[x] + ('' if self.dimensionless else r' $/\Lambda^2\, / \,\mathrm{TeV}^{-2}$')
+#             y_label = label[y] + ('' if self.dimensionless else r' $/\Lambda^2\, / \,\mathrm{TeV}^{-2}$')
+#             x_conv = 1. if self.dimensionless else conversion[x]
+#             y_conv = 1. if self.dimensionless else conversion[y]
+
+#             if coefficients in scan.points.keys():
+#                 madgraph = scan.dataframe(coefficients)
+#             else:
+#                 madgraph = scan.dataframe(sorted(config['coefficients']))
+#             xmin = madgraph[x].min()
+#             xmax = madgraph[x].max()
+#             ymin = madgraph[y].min()
+#             ymax = madgraph[y].max()
+
+#             if self.maxnll:
+#                 try:
+#                     data = root2array(os.path.join(config['outdir'], 'scans', '{}.total.root'.format(tag)))
+#                 except IOError as e:
+#                     print('input data missing, will not match nll for {}'.format(tag))
+#                     continue
+
+#                 zi = 2 * data['deltaNLL']
+#                 xi = data[x]
+#                 yi = data[y]
+#                 xmin = xi[zi < self.maxnll].min()
+#                 ymin = yi[zi < self.maxnll].min()
+#                 xmax = xi[zi < self.maxnll].max()
+#                 ymax = yi[zi < self.maxnll].max()
+#                 window = (madgraph[x] > xmin) & (madgraph[x] < xmax) & (madgraph[y] > ymin) & (madgraph[y] < ymax)
+#                 madgraph = madgraph[window]
+
+
+#             if not self.match_zwindows:
+#                 zmin = min(madgraph[self.processes].min())
+#                 zmax = max(madgraph[self.processes].max())
+
+#             norm = matplotlib.colors.LogNorm(vmin=min(zmin, 0.9), vmax=zmax)
+#             masked_map = get_masked_colormap(
+#                     sns.light_palette("navy", as_cmap=True),
+#                     sns.light_palette((210, 90, 60), input="husl", as_cmap=True),
+#                     norm,
+#                     0.1,
+#                     1.0
+#             )
+
+#             fig = plt.figure(figsize=(30, 9))
+#             grid = ImageGrid(
+#                 fig, 111,
+#                 nrows_ncols=(1, len(self.processes)),
+#                 axes_pad=0.45,
+#                 share_all=True,
+#                 cbar_location="right",
+#                 cbar_mode="single",
+#                 cbar_size="7%",
+#                 cbar_pad=0.15,
+#                 aspect=False
+#             )
+
+#             offplane_coefficients = []
+#             offplane_values = []
+#             if self.madgraph:
+#                 df = madgraph
+#                 for c in sorted(config['coefficients']):
+#                     if c not in coefficients:
+#                         offplane_coefficients += [c]
+#                         offplane_values += [0.0]
+#             else:
+#                 if self.profile:
+#                     f = ROOT.TFile(os.path.join(config['outdir'], 'snapshots',
+#                         '{}.root'.format('_'.join(coefficients))))
+#                     w = f.Get('w')
+#                     w.loadSnapshot('MultiDimFit')
+#                 values = []
+#                 columns = sorted(config['coefficients'])
+#                 for column in columns:
+#                     if column in coefficients:
+#                         if column == x:
+#                             values += [np.linspace(xmin, xmax, self.numvalues)]
+#                         if column == y:
+#                             values += [np.linspace(ymin, ymax, self.numvalues)]
+#                     else:
+#                         offplane_coefficients += [column]
+#                         if self.profile:
+#                             var = w.var(column)
+#                             values += [np.array([var.getVal()])]
+#                             offplane_values += [var.getVal() * (1. if self.dimensionless else conversion[column])]
+#                         else:
+#                             values += [np.zeros(1)]
+#                             offplane_values += [0.]
+#                 start = time.time()
+#                 df = scan.dataframe(columns, evaluate_points=cartesian_product(*values))
+#                 print('took {:.1f} seconds to get df '.format(time.time() - start))
+
+#             for ax, process in zip(grid, self.processes):
+#                 columns = list(coefficients) + [process]
+#                 data = df[columns]
+#                 xx = data[x].values * x_conv
+#                 yy = data[y].values * y_conv
+#                 X, Y = np.meshgrid(np.linspace(xmin * x_conv, xmax * x_conv, self.numvalues * 10), np.linspace(ymin *
+#                     y_conv, ymax * y_conv, self.numvalues * 10))
+#                 Z = scipy.interpolate.griddata((xx, yy), data[process].values, (X, Y), method='nearest')
+#                 msize = 200 if self.madgraph else 25
+#                 marker = 'o' if self.madgraph else 's'
+#                 start = time.time()
+#                 if self.madgraph:
+#                     scatter = ax.scatter(
+#                             xx,
+#                             yy,
+#                             c=data[process],
+#                             norm=norm,
+#                             s=msize,
+#                             marker=marker,
+#                             cmap=masked_map,
+#                             edgecolors='face',
+#                             rasterized=True
+#                     )
+#                 else:
+#                     scatter = ax.pcolormesh(
+#                             X,
+#                             Y,
+#                             Z,
+#                             rasterized=True,
+#                             norm=norm,
+#                             cmap=masked_map)
+#                 if not self.profile:
+#                     ax.scatter(
+#                             [0.0],
+#                             [0.0],
+#                             c='red',
+#                             s=600,
+#                             linewidths=0,
+#                             marker='*',
+#                             label='SM'
+#                     )
+#                 ax.set_ylabel(y_label, horizontalalignment='right', y=1.0)
+#                 ax.set_xlim([xx.min(), xx.max()])
+#                 ax.set_ylim([yy.min(), yy.max()])
+#                 ax.annotate(
+#                     label[process],
+#                     xy=(0.5, 0.85),
+#                     xycoords='axes fraction',
+#                     horizontalalignment='center',
+#                     fontsize='x-large',
+#                     bbox=dict(boxstyle="round,pad=.5", fc="white", ec="none")
+#                 )
+
+#             bar = fig.colorbar(
+#                     scatter,
+#                     cax=ax.cax,
+#                     label='$\sigma_{NP+SM} / \sigma_{SM}$',
+#                     ticks=LogLocator(subs=range(10)),
+#                 )
+#             # there is bug in this version of matplotlib ignores zorder, so redraw ticklines
+#             for t in ax.cax.yaxis.get_ticklines():
+#                 ax.cax.add_artist(t)
+
+#             ax.legend(fancybox=True)
+#             if self.dimensionless:
+#                 point = ', '.join([label[c] for c in offplane_coefficients])
+#             else:
+#                 point = ', '.join(['$\\frac{{{}}}{{\Lambda^2}}$'.format(label[c].replace('$', '')) for c in offplane_coefficients])
+#             title = fig.suptitle(
+#                     '({}) = ({}){}'.format(
+#                         point,
+#                         ', '.join([round(v, 2) for v in offplane_values]),
+#                         ' TeV$^{-2}$' if not self.dimensionless else ''),
+#                     fontsize="x-large"
+#             )
+#             title.set_position([.5, 1.05])
+
+#             logging.info('saving {}'.format(name))
+#             ax.set_xlabel(x_label, horizontalalignment='right', x=1.0)
+#             start = time.time()
+#             plt.savefig(os.path.join(config['outdir'], 'plots', '{}.pdf'.format(name)), bbox_inches='tight', dpi=self.dpi)
+#             plt.savefig(os.path.join(config['outdir'], 'plots', '{}.png'.format(name)), bbox_inches='tight',
+#                     dpi=self.dpi)
+#             plt.close()
+#             print('took {:.1f} seconds to save plot '.format(time.time() - start))
 
 
 class NewPhysicsScaling(Plot):
@@ -597,7 +596,7 @@ class NewPhysicsScaling(Plot):
         self.match_nll_window = match_nll_window
         self.points = points
 
-    def specify(self, config, spec, index):
+    def make_input_futures(self, config, futures):
         inputs = ['cross_sections.npz']
         if self.match_nll_window:
             inputs = multidim_np(config, spec, 1, points=self.points)
@@ -685,167 +684,167 @@ class NewPhysicsScaling(Plot):
                     ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
 
-class NLL2D(Plot):
+# class NLL2D(Plot):
 
-    def __init__(self, subdir='nll2d', dimensionless=False, draw='mesh', maxnll=12, vmin=0.05, points=2000, dpi=400,
-            freeze=False):
-        self.subdir = subdir
-        self.dimensionless = dimensionless
-        if draw not in ['mesh', 'scatter', None]:
-            raise NotImplementedError('can only draw mesh, scatter, or None')
-        self.draw = draw
-        self.maxnll = maxnll
-        self.vmin = vmin
-        self.points = points
-        self.dpi = dpi
-        self.freeze = freeze
+#     def __init__(self, subdir='nll2d', dimensionless=False, draw='mesh', maxnll=12, vmin=0.05, points=2000, dpi=400,
+#             freeze=False):
+#         self.subdir = subdir
+#         self.dimensionless = dimensionless
+#         if draw not in ['mesh', 'scatter', None]:
+#             raise NotImplementedError('can only draw mesh, scatter, or None')
+#         self.draw = draw
+#         self.maxnll = maxnll
+#         self.vmin = vmin
+#         self.points = points
+#         self.dpi = dpi
+#         self.freeze = freeze
 
-    def specify(self, config, spec, index):
-        multidim_np(config, spec, 2, points=self.points, freeze=self.freeze)
+#     def make_input_futures(self, config, spec, index):
+#         multidim_np(config, spec, 2, points=self.points, freeze=self.freeze)
 
-        for coefficients in sorted_combos(config['coefficients'], 2):
-            label = '{}{}'.format('_'.join(coefficients), '_frozen' if self.freeze else '')
-            inputs = [
-                config['fn'],
-                os.path.join(config['outdir'], 'scans', '{}.total.root'.format(label))
-            ]
-            cmd = 'run plot --coefficients {coefficients} --index {index} {fn}'
-            outputs = [os.path.join(config['outdir'], 'plots', self.subdir, '{}.pdf'.format(label))]
-            spec.add(inputs, outputs, cmd.format(coefficients=' '.join(coefficients), index=index, fn=config['fn']))
+#         for coefficients in sorted_combos(config['coefficients'], 2):
+#             label = '{}{}'.format('_'.join(coefficients), '_frozen' if self.freeze else '')
+#             inputs = [
+#                 config['fn'],
+#                 os.path.join(config['outdir'], 'scans', '{}.total.root'.format(label))
+#             ]
+#             cmd = 'run plot --coefficients {coefficients} --index {index} {fn}'
+#             outputs = [os.path.join(config['outdir'], 'plots', self.subdir, '{}.pdf'.format(label))]
+#             spec.add(inputs, outputs, cmd.format(coefficients=' '.join(coefficients), index=index, fn=config['fn']))
 
-    def write(self, config, plotter, args):
-        super(NLL2D, self).write(config)
+#     def write(self, config, plotter, args):
+#         super(NLL2D, self).write(config)
 
-        levels = sorted(chi2.isf([0.05, 0.32], 2))
-        labels = ['68% CL', '95% CL']
-        for coefficients in sorted_combos(args.coefficients, 2):
-            tag = '{}{}'.format('_'.join(coefficients), '_frozen' if self.freeze else '')
-            try:
-                data = root2array(os.path.join(config['outdir'], 'scans', '{}.total.root'.format(tag)))
-            except IOError as e:
-                print 'input data missing, skipping {}'.format(tag)
-                continue
+#         levels = sorted(chi2.isf([0.05, 0.32], 2))
+#         labels = ['68% CL', '95% CL']
+#         for coefficients in sorted_combos(args.coefficients, 2):
+#             tag = '{}{}'.format('_'.join(coefficients), '_frozen' if self.freeze else '')
+#             try:
+#                 data = root2array(os.path.join(config['outdir'], 'scans', '{}.total.root'.format(tag)))
+#             except IOError as e:
+#                 print('input data missing, skipping {}'.format(tag))
+#                 continue
 
-            x = coefficients[0]
-            y = coefficients[1]
-            zi = 2 * data['deltaNLL']
-            zi = zi - zi.min()
-            xi = data[x]
-            yi = data[y]
-            x_label = label[x] + ('' if self.dimensionless else r' $/\Lambda^2$')
-            y_label = label[y] + ('' if self.dimensionless else r' $/\Lambda^2$')
-            if not self.dimensionless:
-                xi *= conversion[x]
-                yi *= conversion[y]
-                x_label += '$\ [\mathrm{TeV}^{-2}]$'
-                y_label += '$\ [\mathrm{TeV}^{-2}]$'
+#             x = coefficients[0]
+#             y = coefficients[1]
+#             zi = 2 * data['deltaNLL']
+#             zi = zi - zi.min()
+#             xi = data[x]
+#             yi = data[y]
+#             x_label = label[x] + ('' if self.dimensionless else r' $/\Lambda^2$')
+#             y_label = label[y] + ('' if self.dimensionless else r' $/\Lambda^2$')
+#             if not self.dimensionless:
+#                 xi *= conversion[x]
+#                 yi *= conversion[y]
+#                 x_label += '$\ [\mathrm{TeV}^{-2}]$'
+#                 y_label += '$\ [\mathrm{TeV}^{-2}]$'
 
-            xmin = xi[zi < self.maxnll].min()
-            xmax = xi[zi < self.maxnll].max()
-            ymin = yi[zi < self.maxnll].min()
-            ymax = yi[zi < self.maxnll].max()
-            window = (xi > xmin) & (xi < xmax) & (yi > ymin) & (yi < ymax)
+#             xmin = xi[zi < self.maxnll].min()
+#             xmax = xi[zi < self.maxnll].max()
+#             ymin = yi[zi < self.maxnll].min()
+#             ymax = yi[zi < self.maxnll].max()
+#             window = (xi > xmin) & (xi < xmax) & (yi > ymin) & (yi < ymax)
 
-            gridsize = 50
-            X, Y = np.meshgrid(
-                    np.linspace(xmin, xmax, gridsize),
-                    np.linspace(ymin, ymax, gridsize)
-            )
-            zmin = 0.1
-            xi = xi[window]
-            yi = yi[window]
-            zi = zi[window]
-            bf_x = xi[zi.argmin()]
-            bf_y = yi[zi.argmin()]
+#             gridsize = 50
+#             X, Y = np.meshgrid(
+#                     np.linspace(xmin, xmax, gridsize),
+#                     np.linspace(ymin, ymax, gridsize)
+#             )
+#             zmin = 0.1
+#             xi = xi[window]
+#             yi = yi[window]
+#             zi = zi[window]
+#             bf_x = xi[zi.argmin()]
+#             bf_y = yi[zi.argmin()]
 
-            Z = scipy.interpolate.griddata((xi, yi), zi, (X, Y), method='nearest')
-            Z = scipy.ndimage.filters.gaussian_filter(Z, 1.6)
-            with plotter.saved_figure(
-                    x_label,
-                    y_label,
-                    os.path.join(self.subdir, tag),
-                    header=config['header'],
-                    figsize=(15, 11),
-                    dpi=self.dpi) as ax:
+#             Z = scipy.interpolate.griddata((xi, yi), zi, (X, Y), method='nearest')
+#             Z = scipy.ndimage.filters.gaussian_filter(Z, 1.6)
+#             with plotter.saved_figure(
+#                     x_label,
+#                     y_label,
+#                     os.path.join(self.subdir, tag),
+#                     header=config['header'],
+#                     figsize=(15, 11),
+#                     dpi=self.dpi) as ax:
 
-                draw = self.draw if (x, y) != ('c2G', 'c3G') else 'scatter'
-                if draw == 'mesh':
-                    contour = plt.tricontour(
-                            X.ravel(),
-                            Y.ravel(),
-                            Z.ravel(),
-                            levels,
-                            colors=['black', 'black'],
-                            linestyles=['--', '-']
-                    )
-                else:
-                    contour = plt.tricontour(
-                            xi,
-                            yi,
-                            zi,
-                            levels,
-                            colors=['black', 'black'],
-                            linestyles=['--', '-']
-                    )
+#                 draw = self.draw if (x, y) != ('c2G', 'c3G') else 'scatter'
+#                 if draw == 'mesh':
+#                     contour = plt.tricontour(
+#                             X.ravel(),
+#                             Y.ravel(),
+#                             Z.ravel(),
+#                             levels,
+#                             colors=['black', 'black'],
+#                             linestyles=['--', '-']
+#                     )
+#                 else:
+#                     contour = plt.tricontour(
+#                             xi,
+#                             yi,
+#                             zi,
+#                             levels,
+#                             colors=['black', 'black'],
+#                             linestyles=['--', '-']
+#                     )
 
-                for i, l in enumerate(labels):
-                    contour.collections[i].set_label(l)
+#                 for i, l in enumerate(labels):
+#                     contour.collections[i].set_label(l)
 
-                plt.plot(
-                    bf_x,
-                    bf_y,
-                    mew=3,
-                    marker="x",
-                    linestyle='None',
-                    color='black',
-                    label='best fit',
-                    zorder=10
-                )
+#                 plt.plot(
+#                     bf_x,
+#                     bf_y,
+#                     mew=3,
+#                     marker="x",
+#                     linestyle='None',
+#                     color='black',
+#                     label='best fit',
+#                     zorder=10
+#                 )
 
-                if self.draw in ['scatter', 'mesh']:
-                    np.clip(Z, self.vmin, zi.max(), Z)
-                    np.clip(zi, self.vmin, zi.max(), zi)
+#                 if self.draw in ['scatter', 'mesh']:
+#                     np.clip(Z, self.vmin, zi.max(), Z)
+#                     np.clip(zi, self.vmin, zi.max(), zi)
 
-                    if draw is 'mesh':
-                        points = ax.pcolormesh(
-                                X,
-                                Y,
-                                Z,
-                            norm=matplotlib.colors.LogNorm(),
-                            cmap=get_stacked_colormaps(
-                                [sns.light_palette("red", reverse=True, as_cmap=True), sns.light_palette("blue", as_cmap=True)],
-                                interfaces=levels[:-1],
-                                norm=matplotlib.colors.LogNorm(vmin=self.vmin, vmax=Z.max())
-                            ),
-                            rasterized=True
-                        )
-                    elif draw is 'scatter':
-                        points = ax.scatter(
-                            xi,
-                            yi,
-                            c=zi,
-                            norm=matplotlib.colors.LogNorm(),
-                            s=600,
-                            marker='s',
-                            linewidths=0,
-                            cmap=get_stacked_colormaps(
-                                [sns.light_palette("red", reverse=True, as_cmap=True), sns.light_palette("blue", as_cmap=True)],
-                                interfaces=levels[:-1],
-                                norm=matplotlib.colors.LogNorm(vmin=self.vmin, vmax=zi.max())
-                            ),
-                            rasterized=True
-                        )
-                    bar = plt.colorbar(
-                        points,
-                        label='$-2\ \Delta\ \mathrm{ln}\ \mathrm{L}$' + (' (asimov data)' if config['asimov data'] else ''),
-                        ticks=LogLocator(subs=range(10))
-                    )
-                    for t in bar.ax.get_yticklines():
-                        bar.ax.add_artist(t)
-                ax.legend(fancybox=True, ncol=3)
-                plt.ylim(ymin=ymin, ymax=ymax)
-                plt.xlim(xmin=xmin, xmax=xmax)
-                # ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+#                     if draw is 'mesh':
+#                         points = ax.pcolormesh(
+#                                 X,
+#                                 Y,
+#                                 Z,
+#                             norm=matplotlib.colors.LogNorm(),
+#                             cmap=get_stacked_colormaps(
+#                                 [sns.light_palette("red", reverse=True, as_cmap=True), sns.light_palette("blue", as_cmap=True)],
+#                                 interfaces=levels[:-1],
+#                                 norm=matplotlib.colors.LogNorm(vmin=self.vmin, vmax=Z.max())
+#                             ),
+#                             rasterized=True
+#                         )
+#                     elif draw is 'scatter':
+#                         points = ax.scatter(
+#                             xi,
+#                             yi,
+#                             c=zi,
+#                             norm=matplotlib.colors.LogNorm(),
+#                             s=600,
+#                             marker='s',
+#                             linewidths=0,
+#                             cmap=get_stacked_colormaps(
+#                                 [sns.light_palette("red", reverse=True, as_cmap=True), sns.light_palette("blue", as_cmap=True)],
+#                                 interfaces=levels[:-1],
+#                                 norm=matplotlib.colors.LogNorm(vmin=self.vmin, vmax=zi.max())
+#                             ),
+#                             rasterized=True
+#                         )
+#                     bar = plt.colorbar(
+#                         points,
+#                         label='$-2\ \Delta\ \mathrm{ln}\ \mathrm{L}$' + (' (asimov data)' if config['asimov data'] else ''),
+#                         ticks=LogLocator(subs=range(10))
+#                     )
+#                     for t in bar.ax.get_yticklines():
+#                         bar.ax.add_artist(t)
+#                 ax.legend(fancybox=True, ncol=3)
+#                 plt.ylim(ymin=ymin, ymax=ymax)
+#                 plt.xlim(xmin=xmin, xmax=xmax)
+#                 # ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
 
 class NLL(Plot):
@@ -856,7 +855,7 @@ class NLL(Plot):
         self.dimensionless = dimensionless
         self.points = points
 
-    def specify(self, config, spec, index):
+    def make_input_futures(self, config, spec, index):
         inputs = multidim_np(config, spec, 1, points=self.points)
 
         for coefficient in config['coefficients']:
@@ -990,7 +989,7 @@ class TwoProcessCrossSectionSM(Plot):
         self.chunksize = chunksize
         self.contours = contours
 
-    def specify(self, config, spec, index):
+    def make_input_futures(self, config, spec, index):
         inputs = multi_signal(self.signals, self.tag, spec, config)
         for signal in self.signals:
             inputs += max_likelihood_fit(signal, spec, config)
@@ -1059,7 +1058,7 @@ class TwoProcessCrossSectionSMAndNP(Plot):
         self.dimensionless = dimensionless
         self.points = points
 
-    def specify(self, config, spec, index):
+    def make_input_futures(self, config, spec, index):
         inputs = multi_signal(self.signals, self.tag, spec, config)
         inputs += multidim_np(config, spec, 1, points=self.points)
         inputs += fluctuate(config, spec)
@@ -1076,7 +1075,7 @@ class TwoProcessCrossSectionSMAndNP(Plot):
         for coefficient in args.coefficients:
             data = np.load(os.path.join(config['outdir'], 'fluctuations-{}.npy'.format(coefficient)))[()]
             if np.isnan(data['x_sec_{}'.format(x_proc)]).any() or np.isnan(data['x_sec_{}'.format(y_proc)]).any():
-                print 'skipping coefficient {} with nan fluctuations'.format(coefficient)
+                print('skipping coefficient {} with nan fluctuations'.format(coefficient))
                 continue
 
             with plotter.saved_figure(
@@ -1097,7 +1096,7 @@ class TwoProcessCrossSectionSMAndNP(Plot):
                         handles.append(handle)
                         labels.append(l)
                 except Exception as e:
-                    print 'problem making contour for {}: {}'.format(coefficient, e)
+                    print('problem making contour for {}: {}'.format(coefficient, e))
 
                 colors = ['black', 'gray']
                 for (bf, _), color in zip(nll[coefficient]['best fit'], colors):
@@ -1121,7 +1120,7 @@ class TwoProcessCrossSectionSMAndNP(Plot):
                 ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
                 ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
-        print tabulate.tabulate(table, headers=['coefficient', 'bf', 'coefficient value'] + config['processes'])
+        print(tabulate.tabulate(table, headers=['coefficient', 'bf', 'coefficient value'] + config['processes']))
 
 
 def plot(args, config):

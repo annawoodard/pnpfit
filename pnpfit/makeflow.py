@@ -170,11 +170,6 @@ def make(args, config):
 
     spec = MakeflowSpecification(config['fn'])
 
-    # adding annotate to the makeflow file without inputs or outputs
-    # forces makeflow to run it everytime makeflow is run: this way new
-    # code changes are always picked up
-    spec.add([], [], ['LOCAL', 'run', 'annotate', config['fn']])
-
     files = sum([glob.glob(os.path.join(indir, '*.root')) for indir in config['indirs']], [])
     for f in files:
         outputs = os.path.join('cross_sections', os.path.basename(f).replace('.root', '.npz'))

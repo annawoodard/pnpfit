@@ -6,10 +6,16 @@ setup(
     author='Anna Woodard',
     author_email='annawoodard@uchicago.edu',
     license='Apache 2.0',
-    packages=find_packages(),
     install_requires=[
         'parsl',
-        'matplotlib'
+        'matplotlib',
+        'scipy',
+        'seaborn',
+        'root-numpy'
+    ],
+    packages=[
+        'pnpfit',
+        'pnpfit.data'
     ],
     keywords=['Workflows', 'Scientific computing', 'High Energy Physics', 'Compact Muon Solenoid'],
 )
