@@ -1,3 +1,4 @@
+import argparse
 import os
 
 import numpy as np
@@ -11,16 +12,16 @@ from NPFit.NPFit.parameters import label, conversion
 from NPFitProduction.NPFitProduction.cross_sections import CrossSectionScan
 
 
-def fit_nll(config, transform=False, dimensionless=True):
+def fit_nll(coefficients, outdir, processes, cross_sections, asimov=False, transform=False, dimensionless=True):
     """Note that the best fit is not straightforward with multiple minima, see:
     https://hypernews.cern.ch/HyperNews/CMS/get/statistics/551/1.html
     """
     # TODO only run this once after running combine instead of every time I plot
     # TODO change to returning a dict with dimensionless and transformed
 
-    scan = CrossSectionScan(os.path.join(config['outdir'], 'cross_sections.npz'))
+    scan = CrossSectionScan(cross_sections)
     res = {}
-    for coefficient in config['coefficients']:
+    for coefficient in coefficients:
         res[coefficient] = {
             'label': '',
             'best fit': [],
@@ -29,7 +30,7 @@ def fit_nll(config, transform=False, dimensionless=True):
             'transformed': False
         }
 
-        data = root2array(os.path.join(config['outdir'], 'scans', '{}.total.root'.format(coefficient)))
+        data = root2array(os.path.join(outdir, 'scans', '{}.total.root'.format(coefficient)))
         # make sure min point is at 0 (combine might have chosen wrong best
         # fit for offset)
         data['deltaNLL'] -= data['deltaNLL'].min()
@@ -59,10 +60,10 @@ def fit_nll(config, transform=False, dimensionless=True):
         threshold = (y[minima] - min(y)) < 0.1
         res[coefficient]['conversion'] = conversion_factor
         res[coefficient]['units'] = '' if conversion_factor == 1. else '$\ [\mathrm{TeV}^{-2}]$'
-        if transform and (len(x[minima][threshold]) == 2 or config['asimov data']):
+        if transform and (len(x[minima][threshold]) == 2 or asimov):
             xi = np.linspace(x.min(), x.max(), 10000)
             total = 0
-            for process in config['processes']:
+            for process in processes:
                 total += scan.evaluate(coefficient, xi.reshape((len(xi), 1)), process)
             offset = xi[total.argmin()] * conversion_factor
 
@@ -114,11 +115,28 @@ def fit_nll(config, transform=False, dimensionless=True):
         ])
     headers = ['Wilson coefficient', 'best fit', '$1\sigma$ CL', '$2\sigma$  CL']
     tag = '{}{}'.format(('_transformed' if transform else ''), ('_dimensionless' if dimensionless else ''))
-    with open(os.path.join(config['outdir'], 'best_fit{}.txt'.format(tag)), 'w') as f:
+    with open(os.path.join(outdir, 'best_fit{}.txt'.format(tag)), 'w') as f:
         f.write(tabulate.tabulate(table, headers=headers))
-    with open(os.path.join(config['outdir'], 'best_fit{}.tex'.format(tag)), 'w') as f:
+    with open(os.path.join(outdir, 'best_fit{}.tex'.format(tag)), 'w') as f:
         f.write(tabulate.tabulate(table, headers=headers, tablefmt='latex_raw'))
 
-    np.save('nll{}{}.npy'.format('_transformed' if transform else '', '_dimensionless' if dimensionless else ''), res)
+    outpath = os.path.join(outdir, 'nll_{}_{}{}.npy'.format(
+        coefficient,
+        'transformed' if transform else '',
+        '_dimensionless' if dimensionless else ''
+        )
+    )
+    np.save(outpath, res)
 
-    return res
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--coefficients", type=str, nargs="*")
+    parser.add_argument("--outdir", type=str)
+    parser.add_argument("--processes", type=str, nargs="*")
+    parser.add_argument("--xsecs", type=str)
+    parser.add_argument("--asimov", action='store_true')
+    parser.add_argument("--transform", action='store_true')
+    parser.add_argument("--dimensionless", action='store_true')
+    args = parser.parse_args()
+
+    fit_nll(args.coefficients, args.outdir, args.processes, args.xsecs, args.asimov, args.transform, args.dimensionless)
